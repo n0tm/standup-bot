@@ -21,7 +21,7 @@ type UpdateMock struct {
 	beforeIdCounter uint64
 	IdMock          mUpdateMockId
 
-	funcMessage          func() (o1 OutgoingMessage)
+	funcMessage          func() (i1 IncomingMessage)
 	inspectFuncMessage   func()
 	afterMessageCounter  uint64
 	beforeMessageCounter uint64
@@ -201,7 +201,7 @@ type UpdateMockMessageExpectation struct {
 
 // UpdateMockMessageResults contains results of the Update.Message
 type UpdateMockMessageResults struct {
-	o1 OutgoingMessage
+	i1 IncomingMessage
 }
 
 // Expect sets up expected params for Update.Message
@@ -229,7 +229,7 @@ func (mmMessage *mUpdateMockMessage) Inspect(f func()) *mUpdateMockMessage {
 }
 
 // Return sets up results that will be returned by Update.Message
-func (mmMessage *mUpdateMockMessage) Return(o1 OutgoingMessage) *UpdateMock {
+func (mmMessage *mUpdateMockMessage) Return(i1 IncomingMessage) *UpdateMock {
 	if mmMessage.mock.funcMessage != nil {
 		mmMessage.mock.t.Fatalf("UpdateMock.Message mock is already set by Set")
 	}
@@ -237,12 +237,12 @@ func (mmMessage *mUpdateMockMessage) Return(o1 OutgoingMessage) *UpdateMock {
 	if mmMessage.defaultExpectation == nil {
 		mmMessage.defaultExpectation = &UpdateMockMessageExpectation{mock: mmMessage.mock}
 	}
-	mmMessage.defaultExpectation.results = &UpdateMockMessageResults{o1}
+	mmMessage.defaultExpectation.results = &UpdateMockMessageResults{i1}
 	return mmMessage.mock
 }
 
 //Set uses given function f to mock the Update.Message method
-func (mmMessage *mUpdateMockMessage) Set(f func() (o1 OutgoingMessage)) *UpdateMock {
+func (mmMessage *mUpdateMockMessage) Set(f func() (i1 IncomingMessage)) *UpdateMock {
 	if mmMessage.defaultExpectation != nil {
 		mmMessage.mock.t.Fatalf("Default expectation is already set for the Update.Message method")
 	}
@@ -256,7 +256,7 @@ func (mmMessage *mUpdateMockMessage) Set(f func() (o1 OutgoingMessage)) *UpdateM
 }
 
 // Message implements Update
-func (mmMessage *UpdateMock) Message() (o1 OutgoingMessage) {
+func (mmMessage *UpdateMock) Message() (i1 IncomingMessage) {
 	mm_atomic.AddUint64(&mmMessage.beforeMessageCounter, 1)
 	defer mm_atomic.AddUint64(&mmMessage.afterMessageCounter, 1)
 
@@ -271,7 +271,7 @@ func (mmMessage *UpdateMock) Message() (o1 OutgoingMessage) {
 		if mm_results == nil {
 			mmMessage.t.Fatal("No results are set for the UpdateMock.Message")
 		}
-		return (*mm_results).o1
+		return (*mm_results).i1
 	}
 	if mmMessage.funcMessage != nil {
 		return mmMessage.funcMessage()

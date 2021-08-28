@@ -16,8 +16,8 @@ import (
 type MiddlewareMock struct {
 	t minimock.Tester
 
-	funcMiddleware          func(u1 Update) (err error)
-	inspectFuncMiddleware   func(u1 Update)
+	funcMiddleware          func(u1 Update, u2 User) (err error)
+	inspectFuncMiddleware   func(u1 Update, u2 User)
 	afterMiddlewareCounter  uint64
 	beforeMiddlewareCounter uint64
 	MiddlewareMock          mMiddlewareMockMiddleware
@@ -56,6 +56,7 @@ type MiddlewareMockMiddlewareExpectation struct {
 // MiddlewareMockMiddlewareParams contains parameters of the Middleware.Middleware
 type MiddlewareMockMiddlewareParams struct {
 	u1 Update
+	u2 User
 }
 
 // MiddlewareMockMiddlewareResults contains results of the Middleware.Middleware
@@ -64,7 +65,7 @@ type MiddlewareMockMiddlewareResults struct {
 }
 
 // Expect sets up expected params for Middleware.Middleware
-func (mmMiddleware *mMiddlewareMockMiddleware) Expect(u1 Update) *mMiddlewareMockMiddleware {
+func (mmMiddleware *mMiddlewareMockMiddleware) Expect(u1 Update, u2 User) *mMiddlewareMockMiddleware {
 	if mmMiddleware.mock.funcMiddleware != nil {
 		mmMiddleware.mock.t.Fatalf("MiddlewareMock.Middleware mock is already set by Set")
 	}
@@ -73,7 +74,7 @@ func (mmMiddleware *mMiddlewareMockMiddleware) Expect(u1 Update) *mMiddlewareMoc
 		mmMiddleware.defaultExpectation = &MiddlewareMockMiddlewareExpectation{}
 	}
 
-	mmMiddleware.defaultExpectation.params = &MiddlewareMockMiddlewareParams{u1}
+	mmMiddleware.defaultExpectation.params = &MiddlewareMockMiddlewareParams{u1, u2}
 	for _, e := range mmMiddleware.expectations {
 		if minimock.Equal(e.params, mmMiddleware.defaultExpectation.params) {
 			mmMiddleware.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmMiddleware.defaultExpectation.params)
@@ -84,7 +85,7 @@ func (mmMiddleware *mMiddlewareMockMiddleware) Expect(u1 Update) *mMiddlewareMoc
 }
 
 // Inspect accepts an inspector function that has same arguments as the Middleware.Middleware
-func (mmMiddleware *mMiddlewareMockMiddleware) Inspect(f func(u1 Update)) *mMiddlewareMockMiddleware {
+func (mmMiddleware *mMiddlewareMockMiddleware) Inspect(f func(u1 Update, u2 User)) *mMiddlewareMockMiddleware {
 	if mmMiddleware.mock.inspectFuncMiddleware != nil {
 		mmMiddleware.mock.t.Fatalf("Inspect function is already set for MiddlewareMock.Middleware")
 	}
@@ -108,7 +109,7 @@ func (mmMiddleware *mMiddlewareMockMiddleware) Return(err error) *MiddlewareMock
 }
 
 //Set uses given function f to mock the Middleware.Middleware method
-func (mmMiddleware *mMiddlewareMockMiddleware) Set(f func(u1 Update) (err error)) *MiddlewareMock {
+func (mmMiddleware *mMiddlewareMockMiddleware) Set(f func(u1 Update, u2 User) (err error)) *MiddlewareMock {
 	if mmMiddleware.defaultExpectation != nil {
 		mmMiddleware.mock.t.Fatalf("Default expectation is already set for the Middleware.Middleware method")
 	}
@@ -123,14 +124,14 @@ func (mmMiddleware *mMiddlewareMockMiddleware) Set(f func(u1 Update) (err error)
 
 // When sets expectation for the Middleware.Middleware which will trigger the result defined by the following
 // Then helper
-func (mmMiddleware *mMiddlewareMockMiddleware) When(u1 Update) *MiddlewareMockMiddlewareExpectation {
+func (mmMiddleware *mMiddlewareMockMiddleware) When(u1 Update, u2 User) *MiddlewareMockMiddlewareExpectation {
 	if mmMiddleware.mock.funcMiddleware != nil {
 		mmMiddleware.mock.t.Fatalf("MiddlewareMock.Middleware mock is already set by Set")
 	}
 
 	expectation := &MiddlewareMockMiddlewareExpectation{
 		mock:   mmMiddleware.mock,
-		params: &MiddlewareMockMiddlewareParams{u1},
+		params: &MiddlewareMockMiddlewareParams{u1, u2},
 	}
 	mmMiddleware.expectations = append(mmMiddleware.expectations, expectation)
 	return expectation
@@ -143,15 +144,15 @@ func (e *MiddlewareMockMiddlewareExpectation) Then(err error) *MiddlewareMock {
 }
 
 // Middleware implements Middleware
-func (mmMiddleware *MiddlewareMock) Middleware(u1 Update) (err error) {
+func (mmMiddleware *MiddlewareMock) Middleware(u1 Update, u2 User) (err error) {
 	mm_atomic.AddUint64(&mmMiddleware.beforeMiddlewareCounter, 1)
 	defer mm_atomic.AddUint64(&mmMiddleware.afterMiddlewareCounter, 1)
 
 	if mmMiddleware.inspectFuncMiddleware != nil {
-		mmMiddleware.inspectFuncMiddleware(u1)
+		mmMiddleware.inspectFuncMiddleware(u1, u2)
 	}
 
-	mm_params := &MiddlewareMockMiddlewareParams{u1}
+	mm_params := &MiddlewareMockMiddlewareParams{u1, u2}
 
 	// Record call args
 	mmMiddleware.MiddlewareMock.mutex.Lock()
@@ -168,7 +169,7 @@ func (mmMiddleware *MiddlewareMock) Middleware(u1 Update) (err error) {
 	if mmMiddleware.MiddlewareMock.defaultExpectation != nil {
 		mm_atomic.AddUint64(&mmMiddleware.MiddlewareMock.defaultExpectation.Counter, 1)
 		mm_want := mmMiddleware.MiddlewareMock.defaultExpectation.params
-		mm_got := MiddlewareMockMiddlewareParams{u1}
+		mm_got := MiddlewareMockMiddlewareParams{u1, u2}
 		if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
 			mmMiddleware.t.Errorf("MiddlewareMock.Middleware got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
 		}
@@ -180,9 +181,9 @@ func (mmMiddleware *MiddlewareMock) Middleware(u1 Update) (err error) {
 		return (*mm_results).err
 	}
 	if mmMiddleware.funcMiddleware != nil {
-		return mmMiddleware.funcMiddleware(u1)
+		return mmMiddleware.funcMiddleware(u1, u2)
 	}
-	mmMiddleware.t.Fatalf("Unexpected call to MiddlewareMock.Middleware. %v", u1)
+	mmMiddleware.t.Fatalf("Unexpected call to MiddlewareMock.Middleware. %v %v", u1, u2)
 	return
 }
 

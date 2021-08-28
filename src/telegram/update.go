@@ -2,22 +2,22 @@ package telegram
 
 type Update interface {
 	Id() int
-	Message() OutgoingMessage
+	Message() IncomingMessage
 }
 
-func NewUpdate(id int, message OutgoingMessage) Update {
+func NewUpdate(id int, message IncomingMessage) Update {
 	return &update{id, message}
 }
 
 type update struct {
 	id      int
-	message OutgoingMessage
+	message IncomingMessage
 }
 
 func (u update) Id() int {
 	return u.id
 }
 
-func (u update) Message() OutgoingMessage {
+func (u update) Message() IncomingMessage {
 	return u.message
 }

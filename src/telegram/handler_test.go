@@ -32,5 +32,5 @@ func Test_handler_Handle(t *testing.T) {
 	client.SendMessageMock.Expect(&outgoingMessage{chatId, text}).Return(nil)
 
 	handler := &handler{}
-	assert.Equal(t, handler.Handle(update, client), nil)
+	assert.Equal(t, handler.Handle(update, NewUserMock(mc), client), nil)
 }

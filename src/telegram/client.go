@@ -32,7 +32,7 @@ func (c client) GetUpdates(offset, timeout, limit int) chan Update {
 
 		updates, _ := c.api.GetUpdatesChan(updateConfig)
 		for update := range updates {
-			channel <- NewUpdate(update.UpdateID, NewIncomingMessage(update.Message.Chat.ID, update.Message.Text))
+			channel <- NewUpdate(update.UpdateID, NewIncomingMessage(update.Message.From.ID, update.Message.Chat.ID, update.Message.Text))
 		}
 	}()
 

@@ -16,8 +16,8 @@ import (
 type HandlerMock struct {
 	t minimock.Tester
 
-	funcHandle          func(u1 Update, c1 Client) (err error)
-	inspectFuncHandle   func(u1 Update, c1 Client)
+	funcHandle          func(u1 Update, u2 User, c1 Client) (err error)
+	inspectFuncHandle   func(u1 Update, u2 User, c1 Client)
 	afterHandleCounter  uint64
 	beforeHandleCounter uint64
 	HandleMock          mHandlerMockHandle
@@ -56,6 +56,7 @@ type HandlerMockHandleExpectation struct {
 // HandlerMockHandleParams contains parameters of the Handler.Handle
 type HandlerMockHandleParams struct {
 	u1 Update
+	u2 User
 	c1 Client
 }
 
@@ -65,7 +66,7 @@ type HandlerMockHandleResults struct {
 }
 
 // Expect sets up expected params for Handler.Handle
-func (mmHandle *mHandlerMockHandle) Expect(u1 Update, c1 Client) *mHandlerMockHandle {
+func (mmHandle *mHandlerMockHandle) Expect(u1 Update, u2 User, c1 Client) *mHandlerMockHandle {
 	if mmHandle.mock.funcHandle != nil {
 		mmHandle.mock.t.Fatalf("HandlerMock.Handle mock is already set by Set")
 	}
@@ -74,7 +75,7 @@ func (mmHandle *mHandlerMockHandle) Expect(u1 Update, c1 Client) *mHandlerMockHa
 		mmHandle.defaultExpectation = &HandlerMockHandleExpectation{}
 	}
 
-	mmHandle.defaultExpectation.params = &HandlerMockHandleParams{u1, c1}
+	mmHandle.defaultExpectation.params = &HandlerMockHandleParams{u1, u2, c1}
 	for _, e := range mmHandle.expectations {
 		if minimock.Equal(e.params, mmHandle.defaultExpectation.params) {
 			mmHandle.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmHandle.defaultExpectation.params)
@@ -85,7 +86,7 @@ func (mmHandle *mHandlerMockHandle) Expect(u1 Update, c1 Client) *mHandlerMockHa
 }
 
 // Inspect accepts an inspector function that has same arguments as the Handler.Handle
-func (mmHandle *mHandlerMockHandle) Inspect(f func(u1 Update, c1 Client)) *mHandlerMockHandle {
+func (mmHandle *mHandlerMockHandle) Inspect(f func(u1 Update, u2 User, c1 Client)) *mHandlerMockHandle {
 	if mmHandle.mock.inspectFuncHandle != nil {
 		mmHandle.mock.t.Fatalf("Inspect function is already set for HandlerMock.Handle")
 	}
@@ -109,7 +110,7 @@ func (mmHandle *mHandlerMockHandle) Return(err error) *HandlerMock {
 }
 
 //Set uses given function f to mock the Handler.Handle method
-func (mmHandle *mHandlerMockHandle) Set(f func(u1 Update, c1 Client) (err error)) *HandlerMock {
+func (mmHandle *mHandlerMockHandle) Set(f func(u1 Update, u2 User, c1 Client) (err error)) *HandlerMock {
 	if mmHandle.defaultExpectation != nil {
 		mmHandle.mock.t.Fatalf("Default expectation is already set for the Handler.Handle method")
 	}
@@ -124,14 +125,14 @@ func (mmHandle *mHandlerMockHandle) Set(f func(u1 Update, c1 Client) (err error)
 
 // When sets expectation for the Handler.Handle which will trigger the result defined by the following
 // Then helper
-func (mmHandle *mHandlerMockHandle) When(u1 Update, c1 Client) *HandlerMockHandleExpectation {
+func (mmHandle *mHandlerMockHandle) When(u1 Update, u2 User, c1 Client) *HandlerMockHandleExpectation {
 	if mmHandle.mock.funcHandle != nil {
 		mmHandle.mock.t.Fatalf("HandlerMock.Handle mock is already set by Set")
 	}
 
 	expectation := &HandlerMockHandleExpectation{
 		mock:   mmHandle.mock,
-		params: &HandlerMockHandleParams{u1, c1},
+		params: &HandlerMockHandleParams{u1, u2, c1},
 	}
 	mmHandle.expectations = append(mmHandle.expectations, expectation)
 	return expectation
@@ -144,15 +145,15 @@ func (e *HandlerMockHandleExpectation) Then(err error) *HandlerMock {
 }
 
 // Handle implements Handler
-func (mmHandle *HandlerMock) Handle(u1 Update, c1 Client) (err error) {
+func (mmHandle *HandlerMock) Handle(u1 Update, u2 User, c1 Client) (err error) {
 	mm_atomic.AddUint64(&mmHandle.beforeHandleCounter, 1)
 	defer mm_atomic.AddUint64(&mmHandle.afterHandleCounter, 1)
 
 	if mmHandle.inspectFuncHandle != nil {
-		mmHandle.inspectFuncHandle(u1, c1)
+		mmHandle.inspectFuncHandle(u1, u2, c1)
 	}
 
-	mm_params := &HandlerMockHandleParams{u1, c1}
+	mm_params := &HandlerMockHandleParams{u1, u2, c1}
 
 	// Record call args
 	mmHandle.HandleMock.mutex.Lock()
@@ -169,7 +170,7 @@ func (mmHandle *HandlerMock) Handle(u1 Update, c1 Client) (err error) {
 	if mmHandle.HandleMock.defaultExpectation != nil {
 		mm_atomic.AddUint64(&mmHandle.HandleMock.defaultExpectation.Counter, 1)
 		mm_want := mmHandle.HandleMock.defaultExpectation.params
-		mm_got := HandlerMockHandleParams{u1, c1}
+		mm_got := HandlerMockHandleParams{u1, u2, c1}
 		if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
 			mmHandle.t.Errorf("HandlerMock.Handle got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
 		}
@@ -181,9 +182,9 @@ func (mmHandle *HandlerMock) Handle(u1 Update, c1 Client) (err error) {
 		return (*mm_results).err
 	}
 	if mmHandle.funcHandle != nil {
-		return mmHandle.funcHandle(u1, c1)
+		return mmHandle.funcHandle(u1, u2, c1)
 	}
-	mmHandle.t.Fatalf("Unexpected call to HandlerMock.Handle. %v %v", u1, c1)
+	mmHandle.t.Fatalf("Unexpected call to HandlerMock.Handle. %v %v %v", u1, u2, c1)
 	return
 }
 

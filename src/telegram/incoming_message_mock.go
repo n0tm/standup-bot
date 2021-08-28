@@ -26,6 +26,12 @@ type IncomingMessageMock struct {
 	afterTextCounter  uint64
 	beforeTextCounter uint64
 	TextMock          mIncomingMessageMockText
+
+	funcUserId          func() (i1 int)
+	inspectFuncUserId   func()
+	afterUserIdCounter  uint64
+	beforeUserIdCounter uint64
+	UserIdMock          mIncomingMessageMockUserId
 }
 
 // NewIncomingMessageMock returns a mock for IncomingMessage
@@ -38,6 +44,8 @@ func NewIncomingMessageMock(t minimock.Tester) *IncomingMessageMock {
 	m.ChatIdMock = mIncomingMessageMockChatId{mock: m}
 
 	m.TextMock = mIncomingMessageMockText{mock: m}
+
+	m.UserIdMock = mIncomingMessageMockUserId{mock: m}
 
 	return m
 }
@@ -328,12 +336,157 @@ func (m *IncomingMessageMock) MinimockTextInspect() {
 	}
 }
 
+type mIncomingMessageMockUserId struct {
+	mock               *IncomingMessageMock
+	defaultExpectation *IncomingMessageMockUserIdExpectation
+	expectations       []*IncomingMessageMockUserIdExpectation
+}
+
+// IncomingMessageMockUserIdExpectation specifies expectation struct of the IncomingMessage.UserId
+type IncomingMessageMockUserIdExpectation struct {
+	mock *IncomingMessageMock
+
+	results *IncomingMessageMockUserIdResults
+	Counter uint64
+}
+
+// IncomingMessageMockUserIdResults contains results of the IncomingMessage.UserId
+type IncomingMessageMockUserIdResults struct {
+	i1 int
+}
+
+// Expect sets up expected params for IncomingMessage.UserId
+func (mmUserId *mIncomingMessageMockUserId) Expect() *mIncomingMessageMockUserId {
+	if mmUserId.mock.funcUserId != nil {
+		mmUserId.mock.t.Fatalf("IncomingMessageMock.UserId mock is already set by Set")
+	}
+
+	if mmUserId.defaultExpectation == nil {
+		mmUserId.defaultExpectation = &IncomingMessageMockUserIdExpectation{}
+	}
+
+	return mmUserId
+}
+
+// Inspect accepts an inspector function that has same arguments as the IncomingMessage.UserId
+func (mmUserId *mIncomingMessageMockUserId) Inspect(f func()) *mIncomingMessageMockUserId {
+	if mmUserId.mock.inspectFuncUserId != nil {
+		mmUserId.mock.t.Fatalf("Inspect function is already set for IncomingMessageMock.UserId")
+	}
+
+	mmUserId.mock.inspectFuncUserId = f
+
+	return mmUserId
+}
+
+// Return sets up results that will be returned by IncomingMessage.UserId
+func (mmUserId *mIncomingMessageMockUserId) Return(i1 int) *IncomingMessageMock {
+	if mmUserId.mock.funcUserId != nil {
+		mmUserId.mock.t.Fatalf("IncomingMessageMock.UserId mock is already set by Set")
+	}
+
+	if mmUserId.defaultExpectation == nil {
+		mmUserId.defaultExpectation = &IncomingMessageMockUserIdExpectation{mock: mmUserId.mock}
+	}
+	mmUserId.defaultExpectation.results = &IncomingMessageMockUserIdResults{i1}
+	return mmUserId.mock
+}
+
+//Set uses given function f to mock the IncomingMessage.UserId method
+func (mmUserId *mIncomingMessageMockUserId) Set(f func() (i1 int)) *IncomingMessageMock {
+	if mmUserId.defaultExpectation != nil {
+		mmUserId.mock.t.Fatalf("Default expectation is already set for the IncomingMessage.UserId method")
+	}
+
+	if len(mmUserId.expectations) > 0 {
+		mmUserId.mock.t.Fatalf("Some expectations are already set for the IncomingMessage.UserId method")
+	}
+
+	mmUserId.mock.funcUserId = f
+	return mmUserId.mock
+}
+
+// UserId implements IncomingMessage
+func (mmUserId *IncomingMessageMock) UserId() (i1 int) {
+	mm_atomic.AddUint64(&mmUserId.beforeUserIdCounter, 1)
+	defer mm_atomic.AddUint64(&mmUserId.afterUserIdCounter, 1)
+
+	if mmUserId.inspectFuncUserId != nil {
+		mmUserId.inspectFuncUserId()
+	}
+
+	if mmUserId.UserIdMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmUserId.UserIdMock.defaultExpectation.Counter, 1)
+
+		mm_results := mmUserId.UserIdMock.defaultExpectation.results
+		if mm_results == nil {
+			mmUserId.t.Fatal("No results are set for the IncomingMessageMock.UserId")
+		}
+		return (*mm_results).i1
+	}
+	if mmUserId.funcUserId != nil {
+		return mmUserId.funcUserId()
+	}
+	mmUserId.t.Fatalf("Unexpected call to IncomingMessageMock.UserId.")
+	return
+}
+
+// UserIdAfterCounter returns a count of finished IncomingMessageMock.UserId invocations
+func (mmUserId *IncomingMessageMock) UserIdAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmUserId.afterUserIdCounter)
+}
+
+// UserIdBeforeCounter returns a count of IncomingMessageMock.UserId invocations
+func (mmUserId *IncomingMessageMock) UserIdBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmUserId.beforeUserIdCounter)
+}
+
+// MinimockUserIdDone returns true if the count of the UserId invocations corresponds
+// the number of defined expectations
+func (m *IncomingMessageMock) MinimockUserIdDone() bool {
+	for _, e := range m.UserIdMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	// if default expectation was set then invocations count should be greater than zero
+	if m.UserIdMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterUserIdCounter) < 1 {
+		return false
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcUserId != nil && mm_atomic.LoadUint64(&m.afterUserIdCounter) < 1 {
+		return false
+	}
+	return true
+}
+
+// MinimockUserIdInspect logs each unmet expectation
+func (m *IncomingMessageMock) MinimockUserIdInspect() {
+	for _, e := range m.UserIdMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Error("Expected call to IncomingMessageMock.UserId")
+		}
+	}
+
+	// if default expectation was set then invocations count should be greater than zero
+	if m.UserIdMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterUserIdCounter) < 1 {
+		m.t.Error("Expected call to IncomingMessageMock.UserId")
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcUserId != nil && mm_atomic.LoadUint64(&m.afterUserIdCounter) < 1 {
+		m.t.Error("Expected call to IncomingMessageMock.UserId")
+	}
+}
+
 // MinimockFinish checks that all mocked methods have been called the expected number of times
 func (m *IncomingMessageMock) MinimockFinish() {
 	if !m.minimockDone() {
 		m.MinimockChatIdInspect()
 
 		m.MinimockTextInspect()
+
+		m.MinimockUserIdInspect()
 		m.t.FailNow()
 	}
 }
@@ -358,5 +511,6 @@ func (m *IncomingMessageMock) minimockDone() bool {
 	done := true
 	return done &&
 		m.MinimockChatIdDone() &&
-		m.MinimockTextDone()
+		m.MinimockTextDone() &&
+		m.MinimockUserIdDone()
 }
