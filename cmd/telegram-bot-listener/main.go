@@ -54,22 +54,51 @@ func loadContainer() (application.Container, error) {
 }
 
 func loadApplication(container application.Container) (application.Container, error) {
-	db, err := gorm.Open(postgres.New(postgres.Config{
-		DSN:                  "host=localhost user=standup-bot password=standup-bot dbname=standup-bot port=5432 sslmode=disable",
-		PreferSimpleProtocol: true,
-	}), &gorm.Config{})
+	err := container.Provide(func() (application.Environment, error) {
+		environment := application.NewEnvironment()
+		if err := environment.Load(".env"); err != nil {
+			return nil, err
+		}
+
+		return environment, nil
+	})
 
 	if err != nil {
 		return nil, err
 	}
 
-	db.AutoMigrate(
-		&telegram.UserModel{},
-	)
-
-	container.Provide(func() application.Storage {
-		return application.NewStorage(db)
+	err = container.Provide(func(environment application.Environment) application.Config {
+		return application.NewConfig(
+			environment.TelegramBotAccessToken(),
+			environment.DatabaseDsn(),
+		)
 	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = container.Provide(func(config application.Config) (application.Storage, error) {
+		db, err := gorm.Open(postgres.New(postgres.Config{
+			DSN:                  config.DatabaseDsn(),
+			PreferSimpleProtocol: true,
+		}), &gorm.Config{})
+
+		if err != nil {
+			return nil, err
+		}
+
+		err = db.AutoMigrate(&telegram.UserModel{})
+		if err != nil {
+			return nil, err
+		}
+
+		return application.NewStorage(db), nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
 
 	return container, nil
 }
@@ -91,9 +120,9 @@ func loadTelegram(container application.Container) (application.Container, error
 		return nil, err
 	}
 
-	err := container.Provide(func() telegram.Client {
-		api, _ := tgbotapi.NewBotAPI("1939189655:AAHOvN8_3MqJA1yGTmh5Z5lMIQ6c_TypqOM")
-		return telegram.NewClient(api)
+	err := container.Provide(func(config application.Config) (telegram.Client, error) {
+		api, err := tgbotapi.NewBotAPI(config.TelegramBotAccessToken())
+		return telegram.NewClient(api), err
 	})
 
 	if err != nil {
